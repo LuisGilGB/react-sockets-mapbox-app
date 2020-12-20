@@ -10,8 +10,8 @@ class Socket {
     this.io.on("connection", (socket) => {
       console.log("Socket client connected.");
 
-      const emitUpdateData = () => {
-        this.io.emit("update-data", {
+      const broadcastServerUpdate = () => {
+        socket.broadcast.emit("server-update", {
           payload: {
             markers: this.markers,
           },
@@ -22,7 +22,7 @@ class Socket {
         msg: "Welcome to server!",
         date: new Date(),
       });
-      socket.emit("update-data", {
+      socket.emit("server-update", {
         payload: {
           markers: this.markers,
         },
@@ -30,22 +30,26 @@ class Socket {
 
       socket.on("add-marker", ({ payload }) => {
         this.addMarker(payload);
-        emitUpdateData();
+        broadcastServerUpdate();
       });
 
       socket.on("update-marker", ({ payload }) => {
         this.updateMarker(payload);
-        emitUpdateData();
+        broadcastServerUpdate();
       });
     });
   }
 
   addMarker({ id, ...markerProps }) {
-    id ?? (this.markers[id] = { id, ...markerProps });
+    if (id) {
+      this.markers[id] = { id, ...markerProps };
+    }
   }
 
   updateMarker({ id, ...updatedProps }) {
-    id ?? (this.markers[id] = { ...this.markers[id], ...markerProps });
+    if (id) {
+      this.markers[id] = { ...this.markers[id], ...updatedProps };
+    }
   }
 }
 

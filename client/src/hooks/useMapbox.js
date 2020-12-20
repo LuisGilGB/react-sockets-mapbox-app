@@ -38,12 +38,31 @@ const useMapbox = (startingLat = 39, startingLng = -6.4, startingZoom = 10) => {
       });
     });
 
-    newMarker.current.next({
-      id: marker.id,
-      lat,
-      lng,
-    });
+    if (!id) {
+      newMarker.current.next({
+        id: marker.id,
+        lat,
+        lng,
+      });
+    }
   }, []);
+
+  const updateMarkers = useCallback(
+    (payload = {}) => {
+      const { markers: inputMarkers = {} } = payload;
+      console.log(inputMarkers);
+      for (const key in inputMarkers) {
+        const marker = inputMarkers[key];
+        if (markers.current[key]) {
+          markers.current[key].setLngLat([marker.lng, marker.lat]);
+        } else {
+          console.log(key, marker);
+          addMarker(marker);
+        }
+      }
+    },
+    [addMarker]
+  );
 
   useEffect(() => {
     const mapboxInstance = new mapboxgl.Map({
@@ -72,6 +91,7 @@ const useMapbox = (startingLat = 39, startingLng = -6.4, startingZoom = 10) => {
     markerDrag$: markerDrag.current,
     setMapRef,
     addMarker,
+    updateMarkers,
   };
 };
 

@@ -1,26 +1,51 @@
-import React, { useEffect } from "react";
+import React, { useCallback, useContext, useEffect } from "react";
+import { SocketContext } from "../context/SocketContext";
 import useMapbox from "../hooks/useMapbox";
 
 const MapView = () => {
-  const { newMarker$, markerDrag$, setMapRef } = useMapbox();
+  const { socket } = useContext(SocketContext);
+  const { newMarker$, markerDrag$, setMapRef, updateMarkers } = useMapbox();
+
+  const emitAddMarker = useCallback(
+    (markerData) => {
+      socket.emit("add-marker", {
+        payload: { ...markerData },
+      });
+    },
+    [socket]
+  );
+
+  const emitUpdateMarker = useCallback(
+    (markerData) => {
+      socket.emit("update-marker", {
+        payload: { ...markerData },
+      });
+    },
+    [socket]
+  );
 
   useEffect(() => {
-    newMarker$.subscribe((markerData) => {
-      console.log(markerData);
-    });
+    newMarker$.subscribe(emitAddMarker);
     return () => {
       newMarker$.unsubscribe();
     };
-  }, [newMarker$]);
+  }, [newMarker$, emitAddMarker]);
 
   useEffect(() => {
-    markerDrag$.subscribe((markerData) => {
-      console.log(markerData);
-    });
+    markerDrag$.subscribe(emitUpdateMarker);
     return () => {
       markerDrag$.unsubscribe();
     };
-  }, [markerDrag$]);
+  }, [markerDrag$, emitUpdateMarker]);
+
+  useEffect(() => {
+    socket.on("server-update", ({ payload }) => {
+      updateMarkers(payload);
+    });
+    return () => {
+      socket.off("server-update");
+    };
+  }, [socket, updateMarkers]);
 
   return (
     <>
