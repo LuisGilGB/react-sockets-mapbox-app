@@ -1,8 +1,26 @@
-import React from "react";
+import React, { useEffect } from "react";
 import useMapbox from "../hooks/useMapbox";
 
 const MapView = () => {
-  const { setMapRef } = useMapbox();
+  const { newMarker$, markerDrag$, setMapRef } = useMapbox();
+
+  useEffect(() => {
+    newMarker$.subscribe((markerData) => {
+      console.log(markerData);
+    });
+    return () => {
+      newMarker$.unsubscribe();
+    };
+  }, [newMarker$]);
+
+  useEffect(() => {
+    markerDrag$.subscribe((markerData) => {
+      console.log(markerData);
+    });
+    return () => {
+      markerDrag$.unsubscribe();
+    };
+  }, [markerDrag$]);
 
   return (
     <>
