@@ -1,7 +1,9 @@
+const MasrkersSet = require("./MarkersSet");
+
 class Socket {
   constructor(io, props = {}) {
     this.io = io;
-    this.markers = {};
+    this.markersSet = new MasrkersSet();
 
     this.addSocketEvents();
   }
@@ -13,7 +15,7 @@ class Socket {
       const broadcastServerUpdate = () => {
         socket.broadcast.emit("server-update", {
           payload: {
-            markers: this.markers,
+            markers: this.markersSet.markers,
           },
         });
       };
@@ -24,32 +26,20 @@ class Socket {
       });
       socket.emit("server-update", {
         payload: {
-          markers: this.markers,
+          markers: this.markersSet.markers,
         },
       });
 
       socket.on("add-marker", ({ payload }) => {
-        this.addMarker(payload);
+        this.markersSet.addMarker(payload);
         broadcastServerUpdate();
       });
 
       socket.on("update-marker", ({ payload }) => {
-        this.updateMarker(payload);
+        this.markersSet.updateMarker(payload);
         broadcastServerUpdate();
       });
     });
-  }
-
-  addMarker({ id, ...markerProps }) {
-    if (id) {
-      this.markers[id] = { id, ...markerProps };
-    }
-  }
-
-  updateMarker({ id, ...updatedProps }) {
-    if (id) {
-      this.markers[id] = { ...this.markers[id], ...updatedProps };
-    }
   }
 }
 

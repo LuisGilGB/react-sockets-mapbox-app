@@ -2,9 +2,21 @@ import React, { useCallback, useContext, useEffect } from "react";
 import { SocketContext } from "../context/SocketContext";
 import useMapbox from "../hooks/useMapbox";
 
+const INITIAL_SPOT = {
+  lat: 38.92,
+  lng: -6.35,
+  zoom: 12,
+};
+
 const MapView = () => {
   const { socket } = useContext(SocketContext);
-  const { newMarker$, markerDrag$, setMapRef, updateMarkers } = useMapbox();
+  const {
+    coords,
+    newMarker$,
+    markerDrag$,
+    setMapRef,
+    updateMarkers,
+  } = useMapbox(INITIAL_SPOT);
 
   const emitAddMarker = useCallback(
     (markerData) => {
@@ -25,16 +37,16 @@ const MapView = () => {
   );
 
   useEffect(() => {
-    newMarker$.subscribe(emitAddMarker);
+    const subscription = newMarker$.subscribe(emitAddMarker);
     return () => {
-      newMarker$.unsubscribe();
+      subscription.unsubscribe();
     };
   }, [newMarker$, emitAddMarker]);
 
   useEffect(() => {
-    markerDrag$.subscribe(emitUpdateMarker);
+    const subscription = markerDrag$.subscribe(emitUpdateMarker);
     return () => {
-      markerDrag$.unsubscribe();
+      subscription.unsubscribe();
     };
   }, [markerDrag$, emitUpdateMarker]);
 
@@ -49,7 +61,9 @@ const MapView = () => {
 
   return (
     <>
-      <div id="coords-tag"></div>
+      <div id="coords-tag">
+        Lat: {coords.lat} | Lng: {coords.lng}
+      </div>
       <div id="map-wrapper" ref={setMapRef}></div>
     </>
   );

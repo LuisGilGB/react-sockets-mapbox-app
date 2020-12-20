@@ -1,11 +1,20 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import { Subject } from "rxjs";
 import { v4 as uuidV4 } from "uuid";
 
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_API_KEY;
 
-const useMapbox = (startingLat = 39, startingLng = -6.4, startingZoom = 10) => {
+const useMapbox = ({
+  lat: startingLat,
+  lng: startingLng,
+  zoom: startingZoom,
+}) => {
+  const [coords, setCoords] = useState({
+    lat: startingLat,
+    lng: startingLng,
+    zoom: startingZoom,
+  });
   // Refs
   const map = useRef();
   const mapBoxDiv = useRef();
@@ -49,9 +58,15 @@ const useMapbox = (startingLat = 39, startingLng = -6.4, startingZoom = 10) => {
 
   const updateMarkers = useCallback(
     (payload = {}) => {
-      const { markers: inputMarkers = {} } = payload;
-      for (const key in inputMarkers) {
-        const marker = inputMarkers[key];
+      const newMarkers = payload.markers;
+      for (const key in markers.current) {
+        if (!newMarkers[key]) {
+          markers.current[key].remove();
+          delete markers.current[key];
+        }
+      }
+      for (const key in newMarkers) {
+        const marker = newMarkers[key];
         if (markers.current[key]) {
           markers.current[key].setLngLat([marker.lng, marker.lat]);
         } else {
@@ -74,6 +89,20 @@ const useMapbox = (startingLat = 39, startingLng = -6.4, startingZoom = 10) => {
   }, [startingLat, startingLng, startingZoom]);
 
   useEffect(() => {
+    map.current?.on("move", () => {
+      const { lng, lat } = map.current.getCenter();
+      setCoords({
+        lng: lng.toFixed(4),
+        lat: lat.toFixed(4),
+        zoom: map.current.getZoom().toFixed(2),
+      });
+    });
+    return () => {
+      map.current?.off("unsubscribe");
+    };
+  }, []);
+
+  useEffect(() => {
     map.current?.on("click", (ev) => {
       const { lat, lng } = ev?.lngLat;
       addMarker({ lat, lng });
@@ -84,6 +113,7 @@ const useMapbox = (startingLat = 39, startingLng = -6.4, startingZoom = 10) => {
   }, [addMarker]);
 
   return {
+    coords,
     markers,
     newMarker$: newMarker.current,
     markerDrag$: markerDrag.current,
