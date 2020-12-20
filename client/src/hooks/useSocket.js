@@ -16,12 +16,18 @@ const useSocket = (serverHost) => {
     socket.on("connect", () => {
       setOnline(true);
     });
+    return () => {
+      socket.off("connect");
+    };
   }, [socket]);
 
   useEffect(() => {
     socket.on("disconnect", () => {
       setOnline(false);
     });
+    return () => {
+      socket.off("disconnect");
+    };
   }, [socket]);
 
   return {
